@@ -1,4 +1,5 @@
 Summary:	Implementation of the ETSI OSP VoIP Peering protocol
+Summary(pl.UTF-8):	Implementacja protokołu ETSI OSP VoIP Peering
 Name:		OSPToolkit
 Version:	3.3.6
 Release:	1
@@ -16,7 +17,15 @@ who want to implement the client side of the European
 Telecommunication Standards Institute's (ETSI) OSP standard for secure
 VoIP peering. The OSP Toolkit includes source code written in ANSI C,
 test tools and extensive documentation on how to implement the OSP
-peering protocl standard.
+peering protocol standard.
+
+%description -l pl.UTF-8
+OSP Toolkit to kompletny zestaw programistyczny dla programistów
+implementujących kliencką stronę standardu ETSI (European
+Telecommunication Standards Institute) OSP dla bezpiecznej komunikacji
+VoIP. OSP Toolkit zawiera kod źródłowy w ANSI C, narzędzia testowe
+oraz szczegółową dokumentację jak zaimplementować standard OSP
+Peering.
 
 %prep
 %setup -q -n TK-3_3_6-20060303
@@ -36,9 +45,6 @@ install lib/*.a $RPM_BUILD_ROOT%{_libdir}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
-
-%post   -p /sbin/ldconfig
-%postun -p /sbin/ldconfig
 
 %files
 %defattr(644,root,root,755)
