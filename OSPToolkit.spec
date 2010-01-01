@@ -1,14 +1,16 @@
 Summary:	Implementation of the ETSI OSP VoIP Peering protocol
 Summary(pl.UTF-8):	Implementacja protokołu ETSI OSP VoIP Peering
 Name:		OSPToolkit
-Version:	3.4.1
+Version:	3.5.3
 Release:	1
 License:	BSD
 Group:		Libraries
 Source0:	http://dl.sourceforge.net/osp-toolkit/%{name}-%{version}.tar.gz
-# Source0-md5:	e9943630934c65d012fb49a820d8b179
+# Source0-md5:	af6d83298596d8952d785e8dcb30c561
+Patch0:		sharedlib.patch
 URL:		http://www.transnexus.com/OSP%20Toolkit/OSP%20Toolkit.htm
 BuildRequires:	openssl-devel
+BuildRequires:	sed >= 4.0
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
@@ -27,27 +29,71 @@ VoIP. OSP Toolkit zawiera kod źródłowy w ANSI C, narzędzia testowe
 oraz szczegółową dokumentację jak zaimplementować standard OSP
 Peering.
 
+%package devel
+Summary:	Header files for OSP Toolkit library
+Summary(pl.UTF-8):	Pliki nagłówkowe biblioteki OSP Toolkit
+Group:		Development/Libraries
+Requires:	%{name} = %{version}-%{release}
+
+%description devel
+Header files for OSP Toolkit library.
+
+%description devel -l pl.UTF-8
+Pliki nagłówkowe biblioteki OSP Toolkit.
+
+%package static
+Summary:	Static OSP Toolkit library
+Summary(pl.UTF-8):	Statyczna biblioteka OSP Toolkit
+Group:		Development/Libraries
+Requires:	%{name}-devel = %{version}-%{release}
+
+%description static
+Static OSP Toolkit library.
+
+%description static -l pl.UTF-8
+Statyczna biblioteka OSP Toolkit.
+
 %prep
-%setup -q -n TK-3_4_1-20070917
+%setup -q -n TK-%(echo %{version} | tr . _)-20091006
+%patch0 -p1
+%{__sed} -i -e 's,\$(INSTALL_PATH)/lib,$(INSTALL_PATH)/%{_lib},' src/Makefile
 
 %build
 %{__make} -C src build \
 	CC="%{__cc}" \
-	GCCFLAGS="-Wall -D_GNU_SOURCE -fPIC %{rpmcflags}"
+	LDFLAGS="%{rpmldflags}" \
+	DFLAGS="%{rpmcflags}"
+
+%{__make} -C enroll linux \
+	CC="%{__cc}" \
+	DFLAGS="%{rpmcflags}"
 
 %install
 rm -rf $RPM_BUILD_ROOT
-
 install -d $RPM_BUILD_ROOT{%{_includedir},%{_libdir}}
 
-cp -a include/osp $RPM_BUILD_ROOT%{_includedir}
-install lib/*.a $RPM_BUILD_ROOT%{_libdir}
+%{__make} -C src install \
+	INSTALL_PATH=$RPM_BUILD_ROOT%{_prefix}
+
+chmod a+x $RPM_BUILD_ROOT%{_libdir}/lib*so*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+%post	-p /sbin/ldconfig
+%postun	-p /sbin/ldconfig
+
 %files
 %defattr(644,root,root,755)
 %doc *.txt
-%{_libdir}/lib*.a
+%attr(755,root,root) %{_libdir}/libosptk.so.*.*
+%attr(755,root,root) %ghost %{_libdir}/libosptk.so.0
+
+%files devel
+%defattr(644,root,root,755)
+%{_libdir}/libosptk.so
 %{_includedir}/osp
+
+%files static
+%defattr(644,root,root,755)
+%{_libdir}/libosptk.a

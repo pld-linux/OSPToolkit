@@ -1,0 +1,32 @@
+--- TK-3_5_3-20091006/src/Makefile	2010-01-02 00:35:45.127259952 +0200
++++ TK-3_5_3-20091006/src/Makefile	2010-01-02 00:37:28.447659057 +0200
+@@ -56,6 +56,7 @@
+           ospciscoext.o ospcapind.o ospcapcnf.o $(SSLOBJ)
+           
+ OSPLIB = $(LIBDIR)/libosptk.a
++OSPLIBSO = $(LIBDIR)/libosptk.so.0.0.0
+ 
+ .SUFFIXES: .o .c 
+ 
+@@ -72,14 +73,20 @@
+ 
+ build: $(OSPLIB)
+ 
+-$(OSPLIB): $(OSPOBJS)
++$(OSPLIB): $(OSPOBJS) $(OSPLIBSO)
+ 	$(AR) -r $(OSPLIB) $(OSPOBJS)
+ 
++$(OSPLIBSO): $(OSPOBJS)
++	$(CC) -o $(OSPLIBSO) $(LDFLAGS) -Wl,-soname -Wl,libosptk.so.0 $(OSPOBJS) -lssl -lm -shared -lcrypto -lpthread
++
+ install: build
+ 	install -d $(INSTALL_PATH)/include/osp
+ 	cp $(INCDIR)/osp/*.h $(INSTALL_PATH)/include/osp/
+ 	install -d $(INSTALL_PATH)/lib
+ 	cp $(OSPLIB) $(INSTALL_PATH)/lib/
++	cp $(OSPLIBSO) $(INSTALL_PATH)/lib/
++	ln -s libosptk.so.0.0.0 $(INSTALL_PATH)/lib/libosptk.so.0
++	ln -s libosptk.so.0.0.0 $(INSTALL_PATH)/lib/libosptk.so
+ 
+ clean:
+ 	rm -f $(OSPLIB) $(OSPOBJS)
