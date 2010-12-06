@@ -1,12 +1,12 @@
 Summary:	Implementation of the ETSI OSP VoIP Peering protocol
 Summary(pl.UTF-8):	Implementacja protokołu ETSI OSP VoIP Peering
 Name:		OSPToolkit
-Version:	3.5.3
-Release:	3
+Version:	3.6.1
+Release:	1
 License:	BSD
 Group:		Libraries
 Source0:	http://dl.sourceforge.net/osp-toolkit/%{name}-%{version}.tar.gz
-# Source0-md5:	af6d83298596d8952d785e8dcb30c561
+# Source0-md5:	9ce96429bd1e7644db6733cca22f63c6
 Patch0:		sharedlib.patch
 URL:		http://www.transnexus.com/OSP%20Toolkit/OSP%20Toolkit.htm
 BuildRequires:	openssl-devel
@@ -54,7 +54,7 @@ Static OSP Toolkit library.
 Statyczna biblioteka OSP Toolkit.
 
 %prep
-%setup -q -n TK-%(echo %{version} | tr . _)-20091006
+%setup -q -n TK-%(echo %{version} | tr . _)-20100107
 %patch0 -p1
 %{__sed} -i -e 's,\$(INSTALL_PATH)/lib,$(INSTALL_PATH)/%{_lib},' src/Makefile
 
@@ -62,11 +62,11 @@ Statyczna biblioteka OSP Toolkit.
 %{__make} -C src build \
 	CC="%{__cc}" \
 	LDFLAGS="%{rpmldflags}" \
-	DFLAGS="%{rpmcflags}"
+	DFLAGS="%{rpmcflags} %{rpmcppflags}"
 
 %{__make} -C enroll linux \
 	CC="%{__cc}" \
-	DFLAGS="%{rpmcflags}"
+	DFLAGS="%{rpmcflags} %{rpmcppflags}"
 
 %install
 rm -rf $RPM_BUILD_ROOT
