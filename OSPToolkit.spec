@@ -5,7 +5,7 @@ Version:	4.2.0
 Release:	1
 License:	BSD
 Group:		Libraries
-Source0:	http://dl.sourceforge.net/osp-toolkit/%{name}-%{version}.tar.gz
+Source0:	http://downloads.sourceforge.net/osp-toolkit/%{name}-%{version}.tar.gz
 # Source0-md5:	edb0ac6d84cf6da0f0406f3d356b6204
 Patch0:		sharedlib.patch
 URL:		http://www.freerouteserver.com/index.php/osp-toolkit
