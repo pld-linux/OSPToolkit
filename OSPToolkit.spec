@@ -1,13 +1,14 @@
 Summary:	Implementation of the ETSI OSP VoIP Peering protocol
 Summary(pl.UTF-8):	Implementacja protokołu ETSI OSP VoIP Peering
 Name:		OSPToolkit
-Version:	4.2.0
-Release:	3
+Version:	4.13.0
+Release:	1
 License:	BSD
 Group:		Libraries
 Source0:	http://downloads.sourceforge.net/osp-toolkit/%{name}-%{version}.tar.gz
-# Source0-md5:	edb0ac6d84cf6da0f0406f3d356b6204
+# Source0-md5:	456c59a7c1c9049f797c471f760546c8
 Patch0:		sharedlib.patch
+Patch1:		openssl.patch
 URL:		http://www.freerouteserver.com/index.php/osp-toolkit
 BuildRequires:	openssl-devel
 BuildRequires:	sed >= 4.0
@@ -54,8 +55,10 @@ Static OSP Toolkit library.
 Statyczna biblioteka OSP Toolkit.
 
 %prep
-%setup -q -n TK-%(echo %{version} | tr . _)-20131014
+%setup -q -n TK-%(echo %{version} | tr . _)-20161107
 %patch0 -p1
+%patch1 -p1
+
 %{__sed} -i -e 's,\$(INSTALL_PATH)/lib,$(INSTALL_PATH)/%{_lib},' src/Makefile
 
 %build

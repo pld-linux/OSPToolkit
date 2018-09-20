@@ -1,0 +1,236 @@
+Description: Changes for OpenSSL 1.1.0.
+Forwarded: no
+From: Di-Shi Sun <di-shi@transnexus.com>
+Last-Update: 2017-02-21 
+
+--- a/src/ospcryptowrap.c
++++ b/src/ospcryptowrap.c
+@@ -45,7 +45,12 @@
+     unsigned char digestedData[OSPC_CRYPTO_DIGEST_BUFFER_MAXLENGTH];
+     unsigned int digestedDataLength = 0;
+ 
+-    EVP_MD_CTX ctx;
++#if (OPENSSL_VERSION_NUMBER >= 0x010100000)
++    EVP_MD_CTX *ctx;
++#else
++    EVP_MD_CTX ctxbuf;
++    EVP_MD_CTX *ctx = &ctxbuf;
++#endif
+     EVP_MD *type = OSPC_OSNULL;
+ 
+     OSPM_ARGUSED(ospvFlags);
+@@ -60,9 +65,15 @@
+ 
+     if (type) {
+         /* Calcualte digest */
+-        EVP_DigestInit(&ctx, type);
+-        EVP_DigestUpdate(&ctx, ospvData, ospvDataLength);
+-        EVP_DigestFinal(&ctx, digestedData, &digestedDataLength);
++#if (OPENSSL_VERSION_NUMBER >= 0x010100000)
++        ctx = EVP_MD_CTX_new();
++#endif
++        EVP_DigestInit(ctx, type);
++        EVP_DigestUpdate(ctx, ospvData, ospvDataLength);
++        EVP_DigestFinal(ctx, digestedData, &digestedDataLength);
++#if (OPENSSL_VERSION_NUMBER >= 0x010100000)
++        EVP_MD_CTX_free(ctx);
++#endif
+         errorcode = OSPC_ERR_NO_ERROR;
+     } else {
+         OSPM_DBGERRORLOG(errorcode, "Error setting digest type");
+@@ -127,10 +138,7 @@
+     unsigned char decryptedData[OSPC_CRYPTO_ENCRYPT_BUFFER_MAXLENGTH];
+     unsigned int decryptedDataLength = 0;
+ 
+-    X509_PUBKEY *pX509PubKey = OSPC_OSNULL;
+     RSA *pRSAPubKey = OSPC_OSNULL;
+-    unsigned char *pData = OSPC_OSNULL;
+-    unsigned int len = 0;
+ 
+     OSPM_ARGUSED(ospvFlags);
+     OSPM_ARGUSED(ospvBERAlgorithm);
+@@ -139,34 +147,21 @@
+     OSPTNLOGDUMP(ospvEncryptedData, ospvEncryptedDataLength, "DECRYPT: ospvEncryptedData");
+     OSPTNLOGDUMP(ospvBERReaderKey, ospvBERReaderKeyLength, "DECRYPT: ospvBERReaderKey");
+ 
+-    pX509PubKey = d2i_X509_PUBKEY(NULL, (const unsigned char **)(&ospvBERReaderKey), ospvBERReaderKeyLength);
+-
+-    if (pX509PubKey) {
+-        pData = pX509PubKey->public_key->data;
+-        len = pX509PubKey->public_key->length;
+-        pRSAPubKey = d2i_RSAPublicKey(NULL, (const unsigned char **)&pData, len);
+-
+-        if (pRSAPubKey) {
+-            decryptedDataLength = RSA_public_decrypt(ospvEncryptedDataLength, ospvEncryptedData, decryptedData, pRSAPubKey, RSA_PKCS1_PADDING);
+-            if (decryptedDataLength != -1) {
+-                errorcode = OSPC_ERR_NO_ERROR;
+-            } else {
+-                OSPM_DBGERRORLOG(errorcode, "Failed to decrypt message");
+-            }
+-
+-            /* Free up mem */
+-            RSA_free(pRSAPubKey);
++    pRSAPubKey = d2i_RSA_PUBKEY(NULL, (const unsigned char **)(&ospvBERReaderKey), ospvBERReaderKeyLength);
++    if (pRSAPubKey) {
++        decryptedDataLength = RSA_public_decrypt(ospvEncryptedDataLength, ospvEncryptedData, decryptedData, pRSAPubKey, RSA_PKCS1_PADDING);
++        if (decryptedDataLength != -1) {
++            errorcode = OSPC_ERR_NO_ERROR;
+         } else {
+-            OSPM_DBGERRORLOG(errorcode, "Failed to init RSA key");
++            OSPM_DBGERRORLOG(errorcode, "Failed to decrypt message");
+         }
+ 
+         /* Free up mem */
+-        X509_PUBKEY_free(pX509PubKey);
++        RSA_free(pRSAPubKey);
+     } else {
+-        OSPM_DBGERRORLOG(errorcode, "Failed to init X509_PUBKEY");
++        OSPM_DBGERRORLOG(errorcode, "Failed to init RSA key");
+     }
+ 
+-
+     /* Copy results to OUT params */
+     if (errorcode == OSPC_ERR_NO_ERROR) {
+         if (ospvDecryptedData == OSPC_OSNULL) {
+@@ -202,10 +197,7 @@
+     int errorcode = OSPC_ERR_CRYPTO_IMPLEMENTATION_SPECIFIC_ERROR;
+     unsigned char digestedData[OSPC_CRYPTO_DIGEST_BUFFER_MAXLENGTH];
+     unsigned int digestedDataLength = OSPC_CRYPTO_DIGEST_BUFFER_MAXLENGTH;
+-    X509_PUBKEY *pX509PubKey = OSPC_OSNULL;
+     RSA *pRSAPubKey = OSPC_OSNULL;
+-    unsigned char *pData = OSPC_OSNULL;
+-    unsigned int len = 0;
+     int type = NID_md5;
+ 
+     OSPM_ARGUSED(ospvFlags);
+@@ -214,34 +206,22 @@
+     OSPTNLOGDUMP(ospvSignature, ospvSignatureLength, "VERIFY: ospvSignature");
+     OSPTNLOGDUMP(ospvBERReaderKey, ospvBERReaderKeyLength, "VERIFY: ospvBERReaderKey");
+ 
+-    pX509PubKey = d2i_X509_PUBKEY(NULL, (const unsigned char **)(&ospvBERReaderKey), ospvBERReaderKeyLength);
+-
+-    if (pX509PubKey) {
+-        pData = pX509PubKey->public_key->data;
+-        len = pX509PubKey->public_key->length;
+-        pRSAPubKey = d2i_RSAPublicKey(NULL, (const unsigned char **)&pData, len);
+-
+-        if (pRSAPubKey) {
+-            if (OSPC_ERR_NO_ERROR == OSPPCryptoWrapDigest(digestedData, &digestedDataLength, OSPC_OSNULL, 0, ospvData, ospvDataLength, 0)) {
+-                if (1 == RSA_verify(type, digestedData, digestedDataLength, ospvSignature, ospvSignatureLength, pRSAPubKey)) {
+-                    errorcode = OSPC_ERR_NO_ERROR;
+-                } else {
+-                    OSPM_DBGERRORLOG(errorcode, "Open-SSL error occurred in Verify");
+-                }
++    pRSAPubKey = d2i_RSA_PUBKEY(NULL, (const unsigned char **)(&ospvBERReaderKey), ospvBERReaderKeyLength);
++    if (pRSAPubKey) {
++        if (OSPC_ERR_NO_ERROR == OSPPCryptoWrapDigest(digestedData, &digestedDataLength, OSPC_OSNULL, 0, ospvData, ospvDataLength, 0)) {
++            if (1 == RSA_verify(type, digestedData, digestedDataLength, ospvSignature, ospvSignatureLength, pRSAPubKey)) {
++                errorcode = OSPC_ERR_NO_ERROR;
+             } else {
+-                OSPM_DBGERRORLOG(errorcode, "Failed to calculate digest");
++                OSPM_DBGERRORLOG(errorcode, "Open-SSL error occurred in Verify");
+             }
+-
+-            /* Free up mem */
+-            RSA_free(pRSAPubKey);
+         } else {
+-            OSPM_DBGERRORLOG(errorcode, "Failed to init RSA key");
++            OSPM_DBGERRORLOG(errorcode, "Failed to calculate digest");
+         }
+ 
+         /* Free up mem */
+-        X509_PUBKEY_free(pX509PubKey);
++        RSA_free(pRSAPubKey);
+     } else {
+-        OSPM_DBGERRORLOG(errorcode, "Failed to init X509_PUBKEY");
++        OSPM_DBGERRORLOG(errorcode, "Failed to init RSA key");
+     }
+ 
+     return errorcode;
+Description: Changes for OpenSSL 1.1.0.
+Forwarded: no
+From: Di-Shi Sun <di-shi@transnexus.com>
+Last-Update: 2017-02-21 
+
+--- a/src/ospopenssl.c
++++ b/src/ospopenssl.c
+@@ -84,7 +84,11 @@
+          * function. It will be done only once now, rather than with every ProviderNew
+          */
+         ctx = (SSL_CTX **)&(security->ContextRef);
++#if (OPENSSL_VERSION_NUMBER >= 0x010100000)
++        version = TLS_client_method();
++#else
+         version = TLSv1_client_method();
++#endif
+         *ctx = SSL_CTX_new(version);
+ 
+         if (*ctx != OSPC_OSNULL) {
+@@ -508,21 +512,21 @@
+             ok = 0;
+         }
+     }
+-    switch (ctx->error) {
++    switch (err) {
+     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+-        X509_NAME_oneline(X509_get_issuer_name(ctx->current_cert), buf, 256);
++        X509_NAME_oneline(X509_get_issuer_name(err_cert), buf, 256);
+         BIO_printf(bio_stdout, "issuer= %s\n", buf);
+         break;
+     case X509_V_ERR_CERT_NOT_YET_VALID:
+     case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
+         BIO_printf(bio_stdout, "notBefore=");
+-        ASN1_TIME_print(bio_stdout, X509_get_notBefore(ctx->current_cert));
++        ASN1_TIME_print(bio_stdout, X509_get_notBefore(err_cert));
+         BIO_printf(bio_stdout, "\n");
+         break;
+     case X509_V_ERR_CERT_HAS_EXPIRED:
+     case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
+         BIO_printf(bio_stdout, "notAfter=");
+-        ASN1_TIME_print(bio_stdout, X509_get_notAfter(ctx->current_cert));
++        ASN1_TIME_print(bio_stdout, X509_get_notAfter(err_cert));
+         BIO_printf(bio_stdout, "\n");
+         break;
+     }
+Description: Changes for gcc and ABI issues.
+Forwarded: no
+From: Di-Shi Sun <di-shi@transnexus.com>
+Last-Update: 2017-02-13 
+
+--- a/src/osptransapi.c
++++ b/src/osptransapi.c
+@@ -983,7 +983,7 @@
+             /* sample mean - have to cast Samples to a float to get some precision on the mean */
+             mean = ((metrics.mean * currnumber) + (ospvMean * ospvSamples)) / (float)metrics.samples;
+ 
+-            OSPM_ISNAN(metrics.mean, tnisnan);
++            OSPM_ISNAN(((float)metrics.mean), tnisnan);
+ 
+             if (tnisnan) {
+                 errcode = OSPC_ERR_TRAN_INVALID_CALC;
+@@ -5297,7 +5297,7 @@
+     return errcode;
+ }
+ 
+-int OSPPTransactionSetSrcServiceProvider(
++int OSPPTransactionSetServiceProvider(
+     OSPTTRANHANDLE ospvTransaction,     /* In - Transaction handle */
+     const char *ospvServiceProvider)    /* In - Service provider */
+ {
+Description: Change for ABI issue.
+Forwarded: no
+From: Di-Shi Sun <di-shi@transnexus.com>
+Last-Update: 2017-02-28 
+
+--- a/include/osp/osptransapi.h
++++ b/include/osp/osptransapi.h
+@@ -136,7 +136,8 @@
+     int OSPPTransactionSetTransferId(OSPTTRANHANDLE, const char*);
+     int OSPPTransactionSetTransferStatus(OSPTTRANHANDLE, OSPE_TRANSFER_STATUS);
+     int OSPPTransactionSetNetworkTranslatedCalledNumber(OSPTTRANHANDLE, OSPE_NUMBER_FORMAT, const char *);
+-    int OSPPTransactionSetSrcServiceProvider(OSPTTRANHANDLE, const char *);
++    int OSPPTransactionSetServiceProvider(OSPTTRANHANDLE, const char *);
++#define OSPPTransactionSetSrcServiceProvider(transaction, provider)  OSPPTransactionSetServiceProvider(transaction, provider);
+     int OSPPTransactionSetDestServiceProvider(OSPTTRANHANDLE, const char *);
+     int OSPPTransactionSetSystemId(OSPTTRANHANDLE, const char *);
+     int OSPPTransactionSetRelatedReason(OSPTTRANHANDLE, const char *);
