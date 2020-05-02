@@ -9,7 +9,7 @@ Source0:	http://downloads.sourceforge.net/osp-toolkit/%{name}-%{version}.tar.gz
 # Source0-md5:	456c59a7c1c9049f797c471f760546c8
 Patch0:		sharedlib.patch
 Patch1:		openssl.patch
-URL:		http://www.freerouteserver.com/index.php/osp-toolkit
+URL:		https://sourceforge.net/projects/osp-toolkit/
 BuildRequires:	openssl-devel
 BuildRequires:	sed >= 4.0
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
