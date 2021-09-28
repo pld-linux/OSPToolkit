@@ -2,7 +2,7 @@ Summary:	Implementation of the ETSI OSP VoIP Peering protocol
 Summary(pl.UTF-8):	Implementacja protokołu ETSI OSP VoIP Peering
 Name:		OSPToolkit
 Version:	4.13.0
-Release:	1
+Release:	2
 License:	BSD
 Group:		Libraries
 Source0:	http://downloads.sourceforge.net/osp-toolkit/%{name}-%{version}.tar.gz

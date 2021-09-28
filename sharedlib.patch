@@ -1,14 +1,15 @@
---- TK-3_5_3-20091006/src/Makefile	2010-01-02 00:35:45.127259952 +0200
-+++ TK-3_5_3-20091006/src/Makefile	2010-01-02 00:37:28.447659057 +0200
-@@ -56,6 +56,7 @@
-           ospciscoext.o ospcapind.o ospcapcnf.o $(SSLOBJ)
+diff -urNp -x '*.orig' TK-4_13_0-20161107.org/src/Makefile TK-4_13_0-20161107/src/Makefile
+--- TK-4_13_0-20161107.org/src/Makefile	2016-01-25 03:47:52.000000000 +0100
++++ TK-4_13_0-20161107/src/Makefile	2021-09-28 23:27:25.531460395 +0200
+@@ -56,6 +56,7 @@ OSPOBJS = osppkcs1.o osppkcs8.o osppkcs7
+           ospciscoext.o ospcapind.o ospcapcnf.o ospstir.o $(SSLOBJ)
            
  OSPLIB = $(LIBDIR)/libosptk.a
 +OSPLIBSO = $(LIBDIR)/libosptk.so.0.0.0
  
  .SUFFIXES: .o .c 
  
-@@ -72,14 +73,20 @@
+@@ -72,14 +73,20 @@ default:
  
  build: $(OSPLIB)
  
