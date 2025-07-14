@@ -56,8 +56,8 @@ Statyczna biblioteka OSP Toolkit.
 
 %prep
 %setup -q -n TK-%(echo %{version} | tr . _)-20161107
-%patch0 -p1
-%patch1 -p1
+%patch -P0 -p1
+%patch -P1 -p1
 
 %{__sed} -i -e 's,\$(INSTALL_PATH)/lib,$(INSTALL_PATH)/%{_lib},' src/Makefile
 
