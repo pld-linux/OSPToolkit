@@ -5,7 +5,7 @@ Version:	4.13.0
 Release:	2
 License:	BSD
 Group:		Libraries
-Source0:	http://downloads.sourceforge.net/osp-toolkit/%{name}-%{version}.tar.gz
+Source0:	https://downloads.sourceforge.net/osp-toolkit/%{name}-%{version}.tar.gz
 # Source0-md5:	456c59a7c1c9049f797c471f760546c8
 Patch0:		sharedlib.patch
 Patch1:		openssl.patch
